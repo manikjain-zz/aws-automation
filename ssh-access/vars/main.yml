@@ -1,0 +1,6 @@
+github_users:
+  - name: # SAMPLE GITHUB USER NAME 
+    groups: sudo
+
+github_users_absent:
+

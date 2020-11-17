@@ -1,0 +1,4 @@
+---
+# Ansible Galaxy roles.
+- src: geerlingguy.github-users
+  version: 1.2.0
