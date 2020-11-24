@@ -20,6 +20,7 @@ Table of Contents
 - Creates a VPC with both a public and private subnet.
 - Launches an ec2 instance, inside the public subnet of the VPC, and
 installs apache on it via bootstrapping.
+- Adds an IAM role to provide EC2 instances with S3 access.
 - Adds a NAT gateway and an Internet gateway to the VPC.
 - Creates a load balancer in the public subnet of the VPC.
 - Adds the ec2 instance, under the load balancer.
