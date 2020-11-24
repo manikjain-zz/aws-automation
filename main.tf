@@ -14,15 +14,15 @@ provider "aws" {
 }
 
 resource "aws_vpc" "dev" {
-  cidr_block       = "10.0.0.0/16"
-  instance_tenancy = "default"
-  enable_dns_support = true
+  cidr_block           = "10.0.0.0/16"
+  instance_tenancy     = "default"
+  enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
     Name = "dev"
   }
-} 
+}
 
 resource "aws_subnet" "dev_private" {
   vpc_id     = aws_vpc.dev.id
@@ -152,11 +152,6 @@ resource "aws_network_interface" "dev_public1" {
   subnet_id       = aws_subnet.dev_public1.id
   private_ips     = ["10.0.2.50"]
   security_groups = [aws_security_group.dev_allow_web.id]
-
-  # attachment {
-  #   instance     = aws_instance.test.id
-  #   device_index = 1
-  # }
 }
 
 resource "aws_eip" "one" {
@@ -165,6 +160,36 @@ resource "aws_eip" "one" {
   associate_with_private_ip = "10.0.2.50"
 
   depends_on = [aws_internet_gateway.dev_gw_internet]
+}
+
+resource "aws_iam_role" "dev_web_s3_access" {
+  name = "dev_web_s3_access"
+
+  assume_role_policy = <<EOF
+{
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Action": "sts:AssumeRole",
+          "Principal": {
+            "Service": "ec2.amazonaws.com"
+          },
+          "Effect": "Allow",
+          "Sid": ""
+        }
+      ]
+    }
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "dev_web_s3_policy_attach" {
+  role       = aws_iam_role.dev_web_s3_access.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+resource "aws_iam_instance_profile" "dev_web" {
+  name = "dev_web"
+  role = aws_iam_role.dev_web_s3_access.name
 }
 
 resource "aws_instance" "dev_web" {
@@ -176,6 +201,7 @@ resource "aws_instance" "dev_web" {
     device_index         = 0
     network_interface_id = aws_network_interface.dev_public1.id
   }
+  iam_instance_profile = "dev_web"
 
   user_data = <<-EOF
                 #!/bin/bash
@@ -261,11 +287,12 @@ data "aws_ami" "dev_web" {
 }
 
 resource "aws_launch_configuration" "dev_web" {
-  name_prefix   = "dev_web-"
-  image_id      = data.aws_ami.dev_web.id
-  instance_type = "t3.micro"
+  name_prefix                 = "dev_web-"
+  image_id                    = data.aws_ami.dev_web.id
+  instance_type               = "t3.micro"
   associate_public_ip_address = true
-  security_groups = [aws_security_group.dev_allow_web.id]
+  security_groups             = [aws_security_group.dev_allow_web.id]
+  iam_instance_profile = "dev_web"
 
   lifecycle {
     create_before_destroy = true
